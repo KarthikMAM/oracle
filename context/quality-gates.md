@@ -15,7 +15,7 @@ After every spawn returns:
 
 | # | Gate | Trigger | Diagnostic on re-spawn |
 |---|---|---|---|
-| G1 | **Phantom artifact** | The reply claims `done`/`PASS` but the cited artifact does not exist on disk. | "Artifact missing at `<path>`. Produce the file, then return its path." |
+| G1 | **Phantom artifact** | The reply claims `done`/`PASS` but the cited artifact does not exist on disk. | "Artifact missing at `<path>`. Produce the file, then return its path." — **But first read the agent's reply for *why* the write failed.** If it reports a **permission denial or a relative-path rejection** writing under `$HOME/.oracle/`, re-spawning will not help: a relative-path failure is fixed by re-instructing the agent to write the absolute `<output_dir>/<file>` path; a permission denial is a **setup failure** the pipeline cannot self-heal — `ESCALATE` to the user pointing at the README "Permissions (required)" section (the run needs `Write(//…/.oracle/**)` and the `bin/` scripts pre-approved), do not loop. |
 | G2 | **Empty research** | The researcher returned without invoking any tool from its assigned medium's tool list. | "Investigate using medium=`<X>` tools listed in config `research.<X>.tools`; cite ≥ `research_cross_reference_floor` independent sources." |
 | G3 | **Medium confusion** | The researcher's findings cite tool calls outside its assigned medium. | "Stay within your assigned evidence medium; re-run with medium=`<X>` tools only." |
 | G4 | **Evidence not persisted** | Findings cite an external URL/doc with no matching entry in `evidence/index.jsonl`. | "Persist every fetched external artifact verbatim to `evidence/` and index it before citing it." |

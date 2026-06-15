@@ -48,7 +48,7 @@ A SURVIVED verdict requires the breadth-and-depth attestation: every attack clas
 
 ## Output
 
-Write `findings.md` (each attack: goal, the concrete failing scenario or the proof it holds, severity) and `verdict.json` (`BROKEN` | `SURVIVED`; `route_to: design` for a landed design attack) to your `output_dir`, then append a `done` manifest line via `bin/oracle-manifest-append <task_id> '<json>'` naming the verdict file (the artifact exists before the manifest entry). The orchestrator reads these off disk, not from your reply.
+Write `findings.md` (each attack: goal, the concrete failing scenario or the proof it holds, severity) and `verdict.json` (`BROKEN` | `SURVIVED`; `route_to: design` for a landed design attack) to their **absolute paths** under your `output_dir` (`<output_dir>/findings.md`, `<output_dir>/verdict.json` — never the bare filename, which fails the Write tool), then append a `done` manifest line via `bin/oracle-manifest-append <task_id> '<json>'` naming the verdict file (the artifact exists before the manifest entry). The orchestrator reads these off disk, not from your reply.
 
 ## Output style
 
