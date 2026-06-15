@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "oracle",
+  "description": "Single-plugin marketplace for Oracle — the autonomous principal-engineer coding pipeline.",
+  "owner": {
+    "name": "Karthik M A M"
+  },
+  "plugins": [
+    {
+      "name": "oracle",
+      "source": "./",
+      "version": "1.0.0"
+    }
+  ]
+}

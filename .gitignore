@@ -1,0 +1,10 @@
+# Project-local Oracle config — contains org-specific MCP tool / review-CLI references, never published
+.oracle/
+
+# Machine-local Claude Code settings (per-user prefs, permissions) — not part of the plugin
+.claude/
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*~

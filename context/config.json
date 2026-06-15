@@ -1,0 +1,109 @@
+{
+  "$comment": "Oracle plugin default configuration. SHIPS WITH ZERO ORG-INTERNAL KNOWLEDGE. Every value here is public/generic. To customize for a private org (internal MCP tools, a non-GitHub review/build toolchain, internal chat/ticketing research), create a project-root .oracle/config.json — it deep-merges over this file and wins on every key it sets. See context/config.schema.md.",
+
+  "research": {
+    "$comment": "Tools each researcher may use per evidence medium. Defaults are public only. A private .oracle/config.json adds internal MCP tools (code search, wiki, chat, ticketing).",
+    "code": {
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "Bash",
+        "mcp__github__search_code",
+        "mcp__github__get_file_contents",
+        "mcp__github__list_commits"
+      ]
+    },
+    "docs": {
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "WebFetch",
+        "WebSearch",
+        "mcp__github__get_file_contents"
+      ]
+    },
+    "conversations": {
+      "tools": [
+        "Bash",
+        "mcp__github__get_issue",
+        "mcp__github__list_issues",
+        "mcp__github__get_pull_request",
+        "mcp__github__get_pull_request_comments"
+      ]
+    },
+    "blog": {
+      "tools": ["WebSearch", "WebFetch"]
+    },
+    "official-docs": {
+      "tools": ["WebSearch", "WebFetch", "mcp__github__get_file_contents"]
+    }
+  },
+
+  "operations": {
+    "$comment": "How to do things in THIS repo. Pre-flight detects most of these from project markers (package.json, Cargo.toml, go.mod, pyproject.toml). Override any that detection gets wrong.",
+    "build": "auto",
+    "test": "auto",
+    "lint": "auto",
+    "typecheck": "auto",
+    "coverage": "auto",
+    "format": "auto",
+    "git": {
+      "main_branch": "auto",
+      "rebase": "git rebase origin/${MAIN_BRANCH}",
+      "push": "git push -u origin HEAD"
+    },
+    "pr": {
+      "$comment": "The review/CR commands for THIS repo. Shipped default is GitHub via the public gh CLI. A private org overrides these in its project .oracle/config.json with its own review-CLI commands — the commands ARE the review path, so there is no separate vcs/tool-name key to keep in sync. create SHOULD open a draft so reviewers aren't notified prematurely.",
+      "create": "gh pr create --draft --fill",
+      "status": "gh pr checks --watch=false; gh pr view --json statusCheckRollup,reviewDecision,comments",
+      "ready": "gh pr ready",
+      "comment": "gh pr comment"
+    }
+  },
+
+  "thresholds": {
+    "$comment": "Run-shape knobs the orchestrator reads. Quality bars (coverage %, mutation %) live in the coding standards, not here.",
+    "research_fanout_floor": 3,
+    "research_fanout_ceiling": 10,
+    "review_fanout_floor": 4,
+    "research_cross_reference_floor": 2,
+    "max_research_rounds": 5,
+    "max_design_iterations": 3,
+    "max_code_iterations": 5,
+    "max_ship_iterations": 30,
+    "ship_poll_seconds": 60,
+    "max_debate_rounds": 4,
+    "max_verdict_reaudits": 2,
+    "max_backward_routes": 4,
+    "max_ship_fix_rounds": 5,
+    "oscillation_limit": 3,
+    "infra_retry_limit": 3,
+    "min_debate_rounds": 1,
+    "$comment_debate": "min_debate_rounds is the floor the orchestrator MAY reduce critic/tester debate toward ONLY for a measured trivially-small, low-risk blast radius (single file; no public surface / wire / concurrency / security). Breadth (lens audit + all gates) never scales down. See context/principles.md 'Full pipeline, every task'.",
+    "$comment_loops": "Every pipeline loop has its OWN ceiling so one loop's churn can't mask another's runaway: max_debate_rounds (consecutive propose-attack-judge rounds per gate), max_verdict_reaudits (judge<->verdict-auditor re-judges on one decision), max_backward_routes (total earlier-phase routes across the run), max_ship_fix_rounds (releaser<->engineer CR-fix round-trips on the CR). Crossing any → ESCALATE. See context/quality-gates.md Loop budgets."
+  },
+
+  "policy": {
+    "$comment": "Hard guardrails. off_limits paths are never written by any agent. The plugin's own internals are off-limits so a run targeting another repo can't mutate Oracle itself.",
+    "off_limits_globs": [
+      "agents/**",
+      "context/**",
+      "bin/**",
+      "commands/**",
+      ".claude-plugin/**",
+      ".oracle/**"
+    ],
+    "forbidden_git": [
+      "push --force",
+      "push -f",
+      "reset --hard",
+      "clean -fd",
+      "filter-branch",
+      "--no-verify"
+    ],
+    "never_auto_merge": true,
+    "never_auto_publish_review": true
+  }
+}
