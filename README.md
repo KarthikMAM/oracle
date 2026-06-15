@@ -110,6 +110,32 @@ Oracle is a long-horizon agentic system, so run it where the model has room to r
 - **Large max-output budget** — start around 64k tokens so the orchestrator has room to think and drive its sub-agents across a long run.
 - **Specify the task fully in the first turn.** Oracle is autonomous after the design checkpoint; a well-specified initial ask maximizes both quality and token efficiency. Ambiguity spread over many follow-up turns costs more and helps less.
 
+### Permissions (required)
+
+Oracle's sub-agents run **headless** — they cannot answer a permission prompt mid-task — and they write the durable artifact bus to **`$HOME/.oracle/`** (outside your project) and run the bundled `bin/` scripts. A Claude Code plugin **cannot grant its own permissions** (that is always the user's `settings.json`), so if these scopes aren't pre-approved, a sub-agent's `Write` to `~/.oracle/` is auto-denied and the run fails with a bare "Write failed". Add the following to your user `~/.claude/settings.json` (or project `.claude/settings.json`) — replace `<YOU>` with your home-dir username:
+
+```jsonc
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Write(//Users/<YOU>/.oracle/**)",
+      "Read(//Users/<YOU>/.oracle/**)",
+      "Bash(bin/oracle-allocate-output:*)",
+      "Bash(bin/oracle-manifest-append:*)",
+      "Bash(gh pr *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ],
+    "additionalDirectories": ["/Users/<YOU>/.oracle"]
+  }
+}
+```
+
+- `acceptEdits` lets the wave of parallel sub-agents write artifacts and edit source without a prompt per file; Bash still prompts for anything outside the allow-list, so you keep oversight of what runs.
+- For a **fully non-interactive / CI** run, use `"defaultMode": "dontAsk"` instead and add the exact build/test/review commands your project uses (e.g. `Bash(npm run *)`) to `allow` — `dontAsk` executes only what's listed and denies the rest, with zero prompts.
+- Your *project's* own build/test/lint commands (resolved into `config.resolved.json`) also run through Bash; allow them too, or run in a mode that permits them.
+
 ## Installation
 
 Oracle is a self-contained Claude Code plugin with its own one-plugin marketplace ([.claude-plugin/marketplace.json](.claude-plugin/marketplace.json)). Register the marketplace, then install:
