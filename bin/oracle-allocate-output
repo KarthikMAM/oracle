@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Atomically claim a unique sequence directory for a sub-agent's output.
+#
+# Usage:
+#   oracle-allocate-output <task-id> <phase> <agent>
+#
+# Output: absolute path to the claimed directory (created), one line to stdout.
+#
+# Concurrency: uses mkdir-as-lock (portable across macOS/Linux — flock is Linux-only).
+
+set -euo pipefail
+
+# lock_is_stale <lock-dir> <ttl-seconds> — true only for a confirmed orphan: the recorded
+# holder PID is dead, OR its acquire-epoch is older than the TTL (PID-reuse backstop), OR the
+# pid file is absent AND the dir mtime is older than the TTL (a holder killed in the tiny
+# window between mkdir and the pid write). A live or just-acquired lock is never stale.
+lock_is_stale() {
+    local lock="$1" ttl="$2" held holder acquired now mtime
+    now=$(date +%s)
+    held=$(cat "${lock}/pid" 2>/dev/null || echo "")
+    holder="${held%% *}"
+    acquired="${held##* }"
+    if [[ -z "${holder}" ]]; then
+        mtime=$(stat -f %m "${lock}" 2>/dev/null || stat -c %Y "${lock}" 2>/dev/null || echo "${now}")
+        (( now - mtime > ttl ))
+        return
+    fi
+    if ! kill -0 "${holder}" 2>/dev/null; then
+        return 0
+    fi
+    if [[ "${acquired}" =~ ^[0-9]+$ ]] && (( now - acquired > ttl )); then
+        return 0
+    fi
+    return 1
+}
+
+if [[ $# -ne 3 ]]; then
+    echo "usage: oracle-allocate-output <task-id> <phase> <agent>" >&2
+    exit 2
+fi
+
+TASK_ID="$1"
+PHASE="$2"
+# Canonicalize the agent label: callers pass the real agent name (e.g. "oracle-engineer"),
+# but the artifact bus and every reader address dirs by the short role ("engineer-<seq>").
+# Strip a leading "oracle-" so the emitted dir matches the documented layout regardless of
+# which form the caller used.
+AGENT="${3#oracle-}"
+
+ROOT="${HOME}/.oracle/runs/${TASK_ID}/${PHASE}"
+LOCK="${ROOT}/.${AGENT}.lock"
+COUNTER="${ROOT}/.${AGENT}.seq"
+
+mkdir -p "${ROOT}"
+
+# mkdir is atomic on POSIX; spin until acquired. The hot path is a plain mkdir spin (race-free).
+# Staleness reclaim is kept OUT of the hot path — reading lock metadata is not atomic with the
+# dir's identity — and attempted ONCE only after the full spin ceiling elapses, which happens
+# only when a holder was killed (SIGKILL/OOM/power-loss) and bypassed the EXIT trap, orphaning
+# the lock. This recovers the bus for the run and its resume without racing a live holder.
+LOCK_TTL_SECONDS=120
+attempts=0
+reclaim_tried=0
+while ! mkdir "${LOCK}" 2>/dev/null; do
+    attempts=$((attempts + 1))
+    if [[ ${attempts} -gt 600 ]]; then
+        if (( reclaim_tried == 0 )) && lock_is_stale "${LOCK}" "${LOCK_TTL_SECONDS}"; then
+            if mv "${LOCK}" "${LOCK}.stale.$$" 2>/dev/null; then
+                rm -rf "${LOCK}.stale.$$"
+            fi
+            reclaim_tried=1
+            attempts=0
+            continue
+        fi
+        echo "oracle-allocate-output: lock contention timeout on ${LOCK}" >&2
+        exit 5
+    fi
+    sleep 0.05
+done
+
+# Release the lock on exit (even on error).
+trap 'rm -rf "${LOCK}" 2>/dev/null || true' EXIT
+echo "$$ $(date +%s)" > "${LOCK}/pid"
+
+if [[ -f "${COUNTER}" ]]; then
+    seq=$(cat "${COUNTER}")
+else
+    seq=0
+fi
+seq=$((seq + 1))
+echo "${seq}" > "${COUNTER}"
+
+OUT_DIR="${ROOT}/${AGENT}-${seq}"
+mkdir -p "${OUT_DIR}"
+
+echo "${OUT_DIR}"

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "oracle",
+  "displayName": "Oracle",
+  "version": "1.0.0",
+  "description": "Autonomous principal-engineer coding pipeline. One flat orchestrator drives a team of specialist sub-agents through research, design, implementation with adversarial review, and shipping — producing a PR/CR, across one or many packages, that a human can review on sight and merge to production.",
+  "author": {
+    "name": "Karthik M A M"
+  },
+  "homepage": "https://github.com/KarthikMAM/oracle",
+  "repository": "https://github.com/KarthikMAM/oracle",
+  "license": "MIT",
+  "keywords": [
+    "autonomous-coding",
+    "multi-agent",
+    "orchestration",
+    "adversarial-review",
+    "code-quality",
+    "opinionated-standards",
+    "research-driven"
+  ]
+}
