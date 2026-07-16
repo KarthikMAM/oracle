@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "oracle",
   "displayName": "Oracle",
-  "version": "1.0.0",
-  "description": "Autonomous principal-engineer coding pipeline. One flat orchestrator drives a team of specialist sub-agents through research, design, implementation with adversarial review, and shipping — producing a PR/CR, across one or many packages, that a human can review on sight and merge to production.",
+  "version": "2.0.0",
+  "description": "Principal-engineer pipeline reduced to first principles: two files. A one-line task, two user gates (understanding, then plan), then autonomous work to a green PR/CR — adversarially verified, grounded in evidence, faithful to the target repo's own AGENTS.md.",
   "author": {
     "name": "Karthik M A M"
   },
@@ -16,7 +16,8 @@
     "orchestration",
     "adversarial-review",
     "code-quality",
-    "opinionated-standards",
+    "workflow-driven",
+    "agents-md",
     "research-driven"
   ]
 }
